@@ -328,12 +328,13 @@ def test(
                     break
 
             evaluator = evaluator_router(config_file)
-            score = evaluator(
-                trajectory=trajectory,
-                config_file=config_file,
-                page=env.page,
-                client=env.get_page_client(env.page),
-            )
+            with env.get_page_client(env.page) as client:
+                score = evaluator(
+                    trajectory=trajectory,
+                    config_file=config_file,
+                    page=env.page,
+                    client=client,
+                )
 
             scores.append(score)
 

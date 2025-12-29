@@ -158,12 +158,13 @@ trajectory.append(create_stop_action(""))
 
 # Demo evaluation
 evaluator = evaluator_router(config_file)
-score = evaluator(
-    trajectory=trajectory,
-    config_file=config_file,
-    page=env.page,
-    client=env.get_page_client(env.page),
-)
+with env.get_page_client(env.page) as client:
+    score = evaluator(
+        trajectory=trajectory,
+        config_file=config_file,
+        page=env.page,
+        client=client,
+    )
 
 # as we manually perform the task, the task should be judged as correct
 assert score == 1.0

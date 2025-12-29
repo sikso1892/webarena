@@ -66,8 +66,8 @@ class TextObervationProcessor(ObservationProcessor):
     ) -> BrowserInfo:
         # extract domtree
         tree = client.send(
-            "DOMSnapshot.captureSnapshot",
-            {
+            method="DOMSnapshot.captureSnapshot",
+            params={
                 "computedStyles": [],
                 "includeDOMRects": True,
                 "includePaintOrder": True,
@@ -136,7 +136,7 @@ class TextObervationProcessor(ObservationProcessor):
                 },
             )
             return response
-        except Exception as e:
+        except Exception:
             return {"result": {"subtype": "error"}}
 
     @staticmethod

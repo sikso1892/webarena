@@ -2,9 +2,10 @@ import json
 import re
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Iterator, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -156,7 +157,8 @@ class ScriptBrowserEnv(Env[dict[str, Observation], Action]):
                 )  # talk to chrome devtools
                 if self.text_observation_type == "accessibility_tree":
                     client.send("Accessibility.enable")
-                page.client = client  # type: ignore # TODO[shuyanzh], fix this hackey client
+                    client.detach()
+                # page.client = client  # type: ignore # TODO[shuyanzh], fix this hackey client
                 page.goto(url)
             # set the first page as the current page
             self.page = self.context.pages[0]
@@ -166,15 +168,20 @@ class ScriptBrowserEnv(Env[dict[str, Observation], Action]):
             client = self.page.context.new_cdp_session(self.page)
             if self.text_observation_type == "accessibility_tree":
                 client.send("Accessibility.enable")
-            self.page.client = client  # type: ignore
+                client.detach()
+            # self.page.client = client  # type: ignore
 
-    def get_page_client(self, page: Page) -> CDPSession:
-        return page.client  # type: ignore
+    @contextmanager
+    def get_page_client(self, page: Page) -> Iterator[CDPSession]:
+        client = page.context.new_cdp_session(page)
+        try:
+            yield client
+        finally:
+            client.detach()
 
     def _get_obs(self) -> dict[str, Observation]:
-        obs = self.observation_handler.get_observation(
-            self.page, self.get_page_client(self.page)
-        )
+        with self.get_page_client(self.page) as client:
+            obs = self.observation_handler.get_observation(self.page, client)
         return obs
 
     def _get_obs_metadata(self) -> dict[str, ObservationMetadata]:
